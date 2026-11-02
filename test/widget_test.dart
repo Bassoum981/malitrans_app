@@ -4,7 +4,7 @@ import 'package:mali_trans_app/app/app.dart';
 
 void main() {
   testWidgets('affiche l’espace de connexion chauffeur', (tester) async {
-    await tester.pumpWidget(const MaliTransApp());
+    await tester.pumpWidget(MaliTransApp());
 
     expect(find.text('Espace chauffeur'), findsOneWidget);
     expect(find.text('Adresse email'), findsOneWidget);
@@ -13,7 +13,7 @@ void main() {
   });
 
   testWidgets('valide les champs de connexion', (tester) async {
-    await tester.pumpWidget(const MaliTransApp());
+    await tester.pumpWidget(MaliTransApp());
 
     await tester.tap(find.text('Se connecter'));
     await tester.pump();

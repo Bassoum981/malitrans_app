@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../controllers/login_controller.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({required this.controller, super.key});
+
+  final LoginController controller;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -148,30 +151,36 @@ class _LoginPageState extends State<LoginPage> {
                       },
                     ),
                     const SizedBox(height: 26),
-                    FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'La connexion API sera ajoutée à l’étape suivante.',
-                              ),
+                    ListenableBuilder(
+                      listenable: widget.controller,
+                      builder: (context, child) {
+                        return FilledButton(
+                          onPressed: widget.controller.isLoading
+                              ? null
+                              : _submit,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.coral,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
-                          );
-                        }
+                          ),
+                          child: widget.controller.isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Se connecter',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
+                        );
                       },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.coral,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: const Text(
-                        'Se connecter',
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
                     ),
                     const SizedBox(height: 22),
                     Text(
@@ -189,5 +198,27 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final success = await widget.controller.login(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (!mounted || success) {
+      return;
+    }
+
+    final errorMessage = widget.controller.errorMessage;
+    if (errorMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
   }
 }

@@ -40,7 +40,9 @@ class ApiClient {
     };
 
     if (bearerToken != null && bearerToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $bearerToken';
+      headers.addAll({
+        'Authorization': ['Bearer', bearerToken].join(' '),
+      });
     }
 
     return headers;

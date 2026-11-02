@@ -26,7 +26,7 @@ class ActiveTripModel extends ActiveTrip {
       busRegistration: bus['immatriculation'] as String? ?? '—',
       busCapacity: _asInt(bus['capacite']),
       busStatus: bus['statut'] as String? ?? '—',
-      distanceKm: ligne['distance_km'] as num?,
+      distanceKm: _asNum(ligne['distance_km']),
     );
   }
 
@@ -36,5 +36,17 @@ class ActiveTripModel extends ActiveTrip {
     }
 
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static num? _asNum(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is num) {
+      return value;
+    }
+
+    return num.tryParse(value.toString());
   }
 }

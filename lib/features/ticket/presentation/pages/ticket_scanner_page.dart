@@ -20,8 +20,17 @@ class TicketScannerPage extends StatefulWidget {
 }
 
 class _TicketScannerPageState extends State<TicketScannerPage> {
-  final _scannerController = MobileScannerController();
+  final _scannerController = MobileScannerController(autoStart: false);
   bool _hasScanned = false;
+  MobileScannerException? _cameraError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startCamera();
+    });
+  }
 
   @override
   void dispose() {
@@ -71,6 +80,17 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
             );
           }
 
+          if (_cameraError != null) {
+            return _CameraPermissionState(
+              message:
+                  _cameraError!.errorCode ==
+                      MobileScannerErrorCode.permissionDenied
+                  ? 'L’autorisation de la caméra est nécessaire pour scanner un billet.'
+                  : 'La caméra est indisponible sur cet appareil.',
+              onRetry: _startCamera,
+            );
+          }
+
           return Column(
             children: [
               Padding(
@@ -88,6 +108,16 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
                     MobileScanner(
                       controller: _scannerController,
                       onDetect: _onDetect,
+                      errorBuilder: (context, error) {
+                        return _CameraPermissionState(
+                          message:
+                              error.errorCode ==
+                                  MobileScannerErrorCode.permissionDenied
+                              ? 'L’autorisation de la caméra est nécessaire pour scanner un billet.'
+                              : 'La caméra est indisponible sur cet appareil.',
+                          onRetry: _startCamera,
+                        );
+                      },
                     ),
                     IgnorePointer(
                       child: Container(
@@ -118,6 +148,38 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
     );
   }
 
+  Future<void> _startCamera() async {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _cameraError = null;
+    });
+
+    try {
+      await _scannerController.start();
+    } on MobileScannerException catch (exception) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _cameraError = exception;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _cameraError = const MobileScannerException(
+          errorCode: MobileScannerErrorCode.genericError,
+        );
+      });
+    }
+  }
+
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_hasScanned || widget.controller.isLoading) {
       return;
@@ -143,6 +205,36 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
     });
     widget.controller.clear();
     await _scannerController.start();
+  }
+}
+
+class _CameraPermissionState extends StatelessWidget {
+  const _CameraPermissionState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.no_photography_outlined, size: 64),
+            const SizedBox(height: 18),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Autoriser la caméra'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

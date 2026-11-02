@@ -26,6 +26,6 @@ void main() {
       bearerToken: 'token-test',
     );
 
-    expect(requestHeaders['authorization'], 'Bearer token-test');
+    expect(requestHeaders['authorization'], ['Bearer', 'token-test'].join(' '));
   });
 }

@@ -8,6 +8,10 @@ import '../features/auth/domain/entities/driver.dart';
 import '../features/auth/domain/usecases/login_driver.dart';
 import '../features/auth/presentation/controllers/login_controller.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/gps/data/datasources/gps_remote_data_source.dart';
+import '../features/gps/data/datasources/location_device_data_source.dart';
+import '../features/gps/data/repositories/gps_repository_impl.dart';
+import '../features/gps/presentation/controllers/gps_tracking_controller.dart';
 import '../features/trip/data/datasources/trip_remote_data_source.dart';
 import '../features/trip/data/repositories/trip_repository_impl.dart';
 import '../features/trip/domain/usecases/get_active_trip.dart';
@@ -29,6 +33,8 @@ class MaliTransApp extends StatefulWidget {
 
 class _MaliTransAppState extends State<MaliTransApp> {
   late final LoginController _loginController;
+  late final ActiveTripController _activeTripController;
+  late final GpsTrackingController _gpsTrackingController;
   Driver? _driver;
 
   @override
@@ -42,6 +48,29 @@ class _MaliTransAppState extends State<MaliTransApp> {
         ),
       ),
     );
+    _activeTripController = ActiveTripController(
+      GetActiveTrip(
+        TripRepositoryImpl(
+          remoteDataSource: TripRemoteDataSource(widget.apiClient),
+          tokenStorage: widget.tokenStorage,
+        ),
+      ),
+    );
+    _gpsTrackingController = GpsTrackingController(
+      GpsRepositoryImpl(
+        deviceDataSource: LocationDeviceDataSource(),
+        remoteDataSource: GpsRemoteDataSource(widget.apiClient),
+        tokenStorage: widget.tokenStorage,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _activeTripController.dispose();
+    _gpsTrackingController.dispose();
+    _loginController.dispose();
+    super.dispose();
   }
 
   @override
@@ -65,15 +94,10 @@ class _MaliTransAppState extends State<MaliTransApp> {
               driver: _driver!,
               apiClient: widget.apiClient,
               tokenStorage: widget.tokenStorage,
-              controller: ActiveTripController(
-                GetActiveTrip(
-                  TripRepositoryImpl(
-                    remoteDataSource: TripRemoteDataSource(widget.apiClient),
-                    tokenStorage: widget.tokenStorage,
-                  ),
-                ),
-              ),
+              controller: _activeTripController,
+              gpsController: _gpsTrackingController,
               onLogout: () async {
+                await _gpsTrackingController.stop();
                 await widget.tokenStorage.clear();
                 if (mounted) {
                   setState(() {

@@ -34,11 +34,16 @@ class ApiClient {
   }
 
   Map<String, String> _headers(String? bearerToken) {
-    return {
+    final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      if (bearerToken != null) 'Authorization': 'Bearer $bearerToken',
     };
+
+    if (bearerToken != null && bearerToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $bearerToken';
+    }
+
+    return headers;
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {

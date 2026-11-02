@@ -4,6 +4,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../auth/domain/entities/driver.dart';
+import '../../../gps/presentation/controllers/gps_tracking_controller.dart';
 import '../../../ticket/data/datasources/ticket_remote_data_source.dart';
 import '../../../ticket/data/repositories/ticket_repository_impl.dart';
 import '../../../ticket/domain/usecases/validate_ticket.dart';
@@ -18,6 +19,7 @@ class DriverHomePage extends StatefulWidget {
     required this.controller,
     required this.apiClient,
     required this.tokenStorage,
+    required this.gpsController,
     required this.onLogout,
     super.key,
   });
@@ -26,6 +28,7 @@ class DriverHomePage extends StatefulWidget {
   final ActiveTripController controller;
   final ApiClient apiClient;
   final TokenStorage tokenStorage;
+  final GpsTrackingController gpsController;
   final VoidCallback onLogout;
 
   @override
@@ -99,6 +102,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     trip: widget.controller.trip!,
                     apiClient: widget.apiClient,
                     tokenStorage: widget.tokenStorage,
+                    gpsController: widget.gpsController,
                   ),
               ],
             );
@@ -114,11 +118,13 @@ class _TripCard extends StatelessWidget {
     required this.trip,
     required this.apiClient,
     required this.tokenStorage,
+    required this.gpsController,
   });
 
   final ActiveTrip trip;
   final ApiClient apiClient;
   final TokenStorage tokenStorage;
+  final GpsTrackingController gpsController;
 
   @override
   Widget build(BuildContext context) {
@@ -235,8 +241,68 @@ class _TripCard extends StatelessWidget {
             foregroundColor: Colors.white,
           ),
         ),
+        const SizedBox(height: 12),
+        ListenableBuilder(
+          listenable: gpsController,
+          builder: (context, child) {
+            final isTracking = gpsController.isTracking;
+
+            return OutlinedButton.icon(
+              onPressed: gpsController.isStarting
+                  ? null
+                  : () async {
+                      if (isTracking) {
+                        await gpsController.stop();
+                      } else {
+                        await gpsController.start(tripId: trip.id);
+                      }
+                    },
+              icon: Icon(
+                isTracking
+                    ? Icons.location_disabled_outlined
+                    : Icons.my_location_outlined,
+              ),
+              label: Text(
+                gpsController.isStarting
+                    ? 'Activation du GPS...'
+                    : isTracking
+                    ? 'Arrêter le suivi GPS'
+                    : 'Démarrer le suivi GPS',
+              ),
+            );
+          },
+        ),
+        ListenableBuilder(
+          listenable: gpsController,
+          builder: (context, child) {
+            if (gpsController.errorMessage == null &&
+                gpsController.lastSentAt == null) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                gpsController.errorMessage ??
+                    'Position GPS envoyée à ${_timeLabel(context, gpsController.lastSentAt!)}.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: gpsController.errorMessage == null
+                      ? AppColors.muted
+                      : AppColors.coral,
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
+  }
+
+  String _timeLabel(BuildContext context, DateTime dateTime) {
+    return MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(dateTime));
   }
 
   String _statusLabel(String status) {

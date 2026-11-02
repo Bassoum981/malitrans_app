@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../auth/domain/entities/driver.dart';
+import '../../../ticket/data/datasources/ticket_remote_data_source.dart';
+import '../../../ticket/data/repositories/ticket_repository_impl.dart';
+import '../../../ticket/domain/usecases/validate_ticket.dart';
+import '../../../ticket/presentation/controllers/ticket_validation_controller.dart';
+import '../../../ticket/presentation/pages/ticket_scanner_page.dart';
 import '../../domain/entities/active_trip.dart';
 import '../controllers/active_trip_controller.dart';
 
@@ -9,12 +16,16 @@ class DriverHomePage extends StatefulWidget {
   const DriverHomePage({
     required this.driver,
     required this.controller,
+    required this.apiClient,
+    required this.tokenStorage,
     required this.onLogout,
     super.key,
   });
 
   final Driver driver;
   final ActiveTripController controller;
+  final ApiClient apiClient;
+  final TokenStorage tokenStorage;
   final VoidCallback onLogout;
 
   @override
@@ -84,7 +95,11 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     onAction: widget.controller.load,
                   )
                 else if (widget.controller.trip != null)
-                  _TripCard(trip: widget.controller.trip!),
+                  _TripCard(
+                    trip: widget.controller.trip!,
+                    apiClient: widget.apiClient,
+                    tokenStorage: widget.tokenStorage,
+                  ),
               ],
             );
           },
@@ -95,9 +110,15 @@ class _DriverHomePageState extends State<DriverHomePage> {
 }
 
 class _TripCard extends StatelessWidget {
-  const _TripCard({required this.trip});
+  const _TripCard({
+    required this.trip,
+    required this.apiClient,
+    required this.tokenStorage,
+  });
 
   final ActiveTrip trip;
+  final ApiClient apiClient;
+  final TokenStorage tokenStorage;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +210,23 @@ class _TripCard extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         FilledButton.icon(
-          onPressed: null,
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TicketScannerPage(
+                  trip: trip,
+                  controller: TicketValidationController(
+                    ValidateTicket(
+                      TicketRepositoryImpl(
+                        remoteDataSource: TicketRemoteDataSource(apiClient),
+                        tokenStorage: tokenStorage,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
           icon: const Icon(Icons.qr_code_scanner),
           label: const Text('Scanner un billet'),
           style: FilledButton.styleFrom(

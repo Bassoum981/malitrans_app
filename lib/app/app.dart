@@ -63,6 +63,8 @@ class _MaliTransAppState extends State<MaliTransApp> {
             )
           : DriverHomePage(
               driver: _driver!,
+              apiClient: widget.apiClient,
+              tokenStorage: widget.tokenStorage,
               controller: ActiveTripController(
                 GetActiveTrip(
                   TripRepositoryImpl(

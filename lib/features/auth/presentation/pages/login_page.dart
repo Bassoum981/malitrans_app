@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../domain/entities/driver.dart';
 import '../controllers/login_controller.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({required this.controller, super.key});
+  const LoginPage({
+    required this.controller,
+    required this.onLoginSuccess,
+    super.key,
+  });
 
   final LoginController controller;
+  final ValueChanged<Driver> onLoginSuccess;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -211,6 +217,10 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     if (!mounted || success) {
+      if (success && widget.controller.driver != null) {
+        widget.onLoginSuccess(widget.controller.driver!);
+      }
+
       return;
     }
 

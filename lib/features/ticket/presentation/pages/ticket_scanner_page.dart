@@ -62,20 +62,20 @@ class _TicketScannerPageState extends State<TicketScannerPage> {
       body: ListenableBuilder(
         listenable: widget.controller,
         builder: (context, child) {
-          if (widget.controller.ticket != null) {
-            return _ValidationResult(
-              message: 'Billet validé. Bon voyage !',
-              icon: Icons.check_circle_outline,
-              color: Colors.green,
-              onScanAnother: _resetScanner,
-            );
-          }
-
           if (widget.controller.errorMessage != null) {
             return _ValidationResult(
               message: widget.controller.errorMessage!,
               icon: Icons.error_outline,
               color: AppColors.coral,
+              onScanAnother: _resetScanner,
+            );
+          }
+
+          if (widget.controller.ticket != null) {
+            return _ValidationResult(
+              message: 'Billet validé. Bon voyage !',
+              icon: Icons.check_circle_outline,
+              color: Colors.green,
               onScanAnother: _resetScanner,
             );
           }
@@ -292,6 +292,43 @@ class _ValidationResult extends StatelessWidget {
                         label: 'Montant',
                         value: '${ticket.price} FCFA',
                       ),
+                      _ResultRow(label: 'Statut', value: ticket.status),
+                      _ResultRow(
+                        label: 'Date de paiement',
+                        value: _formatDate(context, ticket.paymentDate),
+                      ),
+                      _ResultRow(
+                        label: 'Date de validation',
+                        value: _formatDate(context, ticket.validatedAt),
+                      ),
+                      if (ticket.passengerPhone != null)
+                        _ResultRow(
+                          label: 'Téléphone',
+                          value: ticket.passengerPhone!,
+                        ),
+                      if (ticket.departureCity != null &&
+                          ticket.arrivalCity != null)
+                        _ResultRow(
+                          label: 'Trajet',
+                          value:
+                              '${ticket.departureCity} → ${ticket.arrivalCity}',
+                        ),
+                      if (ticket.busRegistration != null)
+                        _ResultRow(
+                          label: 'Bus',
+                          value: ticket.busRegistration!,
+                        ),
+                      if (ticket.saleType != null)
+                        _ResultRow(
+                          label: 'Type de vente',
+                          value: ticket.saleType!,
+                        ),
+                      if (ticket.sellerName != null)
+                        _ResultRow(
+                          label: 'Vendu par',
+                          value: ticket.sellerName!,
+                        ),
+                      _ResultRow(label: 'QR', value: ticket.qrCode),
                     ],
                   ),
                 ),
@@ -307,6 +344,20 @@ class _ValidationResult extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(BuildContext context, DateTime? date) {
+    if (date == null) {
+      return 'Non disponible';
+    }
+
+    final localizations = MaterialLocalizations.of(context);
+    final dateLabel = localizations.formatFullDate(date);
+    final timeLabel = localizations.formatTimeOfDay(
+      TimeOfDay.fromDateTime(date),
+    );
+
+    return '$dateLabel à $timeLabel';
   }
 }
 

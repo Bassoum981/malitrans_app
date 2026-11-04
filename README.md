@@ -46,7 +46,18 @@ MaliTrans au moyen de tokens Sanctum.
   - billet annulé ;
   - QR invalide ;
   - billet appartenant à un autre trajet.
-- Affichage du passager, du siège et du montant après validation.
+- Affichage complet du billet après le scan :
+  - identifiant et QR ;
+  - passager et téléphone ;
+  - siège, montant et type de vente ;
+  - statut ;
+  - date de paiement et date de validation ;
+  - trajet, ligne et bus ;
+  - vendeur lorsque cette information est disponible.
+- Lorsqu'un billet est déjà validé ou refusé pour une autre raison, l'API
+  conserve le statut HTTP `422` mais renvoie aussi les informations du billet
+  trouvé. L'application affiche alors le motif du refus et les détails utiles
+  du billet au chauffeur.
 
 ### Suivi GPS
 

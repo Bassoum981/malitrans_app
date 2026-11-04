@@ -62,7 +62,10 @@ class ApiClient {
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw AppException(_errorMessage(decoded, response.statusCode));
+      throw AppException(
+        _errorMessage(decoded, response.statusCode),
+        data: decoded['data'],
+      );
     }
 
     return decoded;
